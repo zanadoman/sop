@@ -1,0 +1,43 @@
+<div class="container d-flex flex-column vh-100 justify-content-center">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <form class="bg-body-secondary p-3 rounded-3 shadow mb-3" [formGroup]="registerForm" (ngSubmit)="onRegister()">
+        <div class="input-group mb-2">
+          <span class="input-group-text">
+            <i class="bi bi-person me-1"></i> Username
+          </span>
+          <input id="root-page-register-form-username" class="form-control" type="text" formControlName="username">
+        </div>
+        <div class="input-group mb-3">
+          <span class="input-group-text">
+            <i class="bi bi-lock me-1"></i> Password
+          </span>
+          <input id="root-page-register-form-password" class="form-control" type="password" formControlName="password">
+        </div>
+        <div class="d-grid">
+          <button class="btn btn-primary" type="submit">Register</button>
+        </div>
+      </form>
+      <form class="bg-body-secondary p-3 rounded-3 shadow mb-3" [formGroup]="loginForm" (ngSubmit)="onLogin()">
+        <div class="input-group mb-2">
+          <span class="input-group-text">
+            <i class="bi bi-person me-1"></i> Username
+          </span>
+          <input id="root-page-login-form-username" class="form-control" type="text" formControlName="username">
+        </div>
+        <div class="input-group mb-3">
+          <span class="input-group-text">
+            <i class="bi bi-lock me-1"></i> Password
+          </span>
+          <input id="root-page-login-form-password" class="form-control" type="password" formControlName="password">
+        </div>
+        <div class="d-grid">
+          <button class="btn btn-primary" type="submit">Login</button>
+        </div>
+      </form>
+      <div class="d-grid">
+        <button class="btn btn-primary shadow" type="button" (click)="onLogout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</div>
