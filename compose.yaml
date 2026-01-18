@@ -1,0 +1,23 @@
+name: sop
+
+services:
+  db:
+    env_file: .env
+    image: postgres:18.1-trixie
+    volumes:
+      - db:/var/lib/postgresql
+    ports:
+      - ${DATABASE_PORT}:5432
+    environment:
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+
+  app:
+    env_file: .env
+    build: .
+    volumes:
+      - ./:/app
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+
+volumes:
+  db:
