@@ -2,11 +2,9 @@
   "name": "sop",
   "version": "0.0.0",
   "scripts": {
-    "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
     "watch": "concurrently -k \"ng build --configuration development --watch\" \"wait-on dist/sop/browser/index.html && watchexec -r -e js node api/main.js\"",
-    "test": "ng test"
+    "build": "ng build",
+    "serve": "node api/main.js"
   },
   "prettier": {
     "printWidth": 100,

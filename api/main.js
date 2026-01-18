@@ -1,10 +1,11 @@
-import '@dotenvx/dotenvx/config';
-import path from 'path';
+'use strict';
+
 import express from 'express';
+import path from 'path';
+import '@dotenvx/dotenvx/config';
 
 const app = express();
-
-app.use(express.static('dist/sop/browser'));
-app.use((_, res) => res.sendFile(path.resolve('dist/sop/browser/index.html')));
-
+const root = path.resolve('dist/sop/browser');
+app.use(express.static(root));
+app.use((_, res) => res.sendFile(`${root}/index.html`));
 app.listen(process.env.APP_PORT || 8080);
