@@ -5,7 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "watch": "ng build --watch --configuration development",
+    "watch": "concurrently -k \"ng build --configuration development --watch\" \"wait-on dist/sop/browser/index.html && watchexec -r -e js node api/main.js\"",
     "test": "ng test"
   },
   "prettier": {
@@ -29,9 +29,11 @@
     "@angular/forms": "^21.0.0",
     "@angular/platform-browser": "^21.0.0",
     "@angular/router": "^21.0.0",
+    "@dotenvx/dotenvx": "^1.51.4",
     "@popperjs/core": "^2.11.8",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
+    "express": "^5.2.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -41,8 +43,10 @@
     "@angular/compiler-cli": "^21.0.0",
     "@angular/localize": "^21.0.0",
     "@ng-bootstrap/ng-bootstrap": "^20.0.0",
+    "concurrently": "^9.2.1",
     "jsdom": "^27.1.0",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "wait-on": "^9.0.3"
   }
 }
