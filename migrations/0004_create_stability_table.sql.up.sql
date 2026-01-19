@@ -1,5 +1,5 @@
 CREATE TABLE "stability" (
-    "number" bigint,
+    "number" bigint REFERENCES "elements"("number"),
     "mass"   bigint,
     PRIMARY KEY ("number", "mass")
 );
