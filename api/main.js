@@ -3,19 +3,29 @@
 import express from 'express';
 import { Pool } from 'pg';
 import '@dotenvx/dotenvx/config';
+import connectPgSimple from 'connect-pg-simple';
+import expressSession from 'express-session';
 import bcrypt from 'bcrypt';
 import path from 'path';
 
 const app = express();
 app.use(express.json());
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+const pgSession = connectPgSimple(expressSession);
+app.use(expressSession({
+  secret: 'secret',
+  store: new pgSession({ pool: pgPool }),
+  resave: false,
+  saveUninitialized: false
+}));
 
 app.post('/api/register', async (req, res) => {
   if (!req.body.username) {
     return res.status(422).json({ message: 'Username required!' });
   }
 
-  if ((await pool.query(
+  if ((await pgPool.query(
     `SELECT *
      FROM "users"
      WHERE "username" = $1
@@ -33,7 +43,7 @@ app.post('/api/register', async (req, res) => {
     return res.status(422).json({ message: 'Password too short!' });
   }
 
-  res.status(201).json((await pool.query(
+  res.status(201).json((await pgPool.query(
     `INSERT INTO "users"
      VALUES ($1, $2)
      RETURNING "username"`,
