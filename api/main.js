@@ -60,7 +60,7 @@ const authMiddleware = (req, res, next) => {
   *         description: Validation error
   */
 app.post('/api/register', async (req, res) => {
-  if (!req.body.username) {
+  if (!('username' in req.body)) {
     return res.status(422).json({ validation: 'username.required' });
   }
 
@@ -78,7 +78,7 @@ app.post('/api/register', async (req, res) => {
     return res.status(422).json({ validation: 'username.duplicate' });
   }
 
-  if (!req.body.password) {
+  if (!('password' in req.body)) {
     return res.status(422).json({ validation: 'password.required' });
   }
 
@@ -145,7 +145,7 @@ app.get('/api/elements', async (_, res) => {
 });
 
 app.post('/api/elements/', authMiddleware, async (req, res) => {
-  if (!req.body.number) {
+  if (!('number' in req.body)) {
     return res.status(422).json({ validation: 'number.required' });
   }
 
@@ -167,15 +167,23 @@ app.post('/api/elements/', authMiddleware, async (req, res) => {
     return res.status(422).json({ validation: 'number.duplicate' });
   }
 
-  if (!req.body.name) {
+  if (!('name' in req.body)) {
     return res.status(422).json({ validation: 'name.required' });
   }
 
-  if (!req.body.symbol) {
+  if (typeof req.body.name !== 'string') {
+    return res.status(422).json({ validation: 'name.string' });
+  }
+
+  if (!('symbol' in req.body)) {
     return res.status(422).json({ validation: 'symbol.required' });
   }
 
-  if (!req.body.mass) {
+  if (typeof req.body.symbol !== 'string') {
+    return res.status(422).json({ validation: 'symbol.string' });
+  }
+
+  if (!('mass' in req.body)) {
     return res.status(422).json({ validation: 'mass.required' });
   }
 
@@ -187,7 +195,7 @@ app.post('/api/elements/', authMiddleware, async (req, res) => {
     return res.status(422).json({ validation: 'mass.low' });
   }
 
-  if (!req.body.synthetic) {
+  if (!('synthetic' in req.body)) {
     return res.status(422).json({ validation: 'synthetic.required' });
   }
 
@@ -195,11 +203,19 @@ app.post('/api/elements/', authMiddleware, async (req, res) => {
     return res.status(422).json({ validation: 'synthetic.boolean' });
   }
 
-  if (req.body.melting && typeof req.body.melting !== 'number') {
+  if (!('melting' in req.body)) {
+    return res.status(422).json({ validation: 'melting.required' });
+  }
+
+  if (typeof req.body.melting !== 'number' && req.body.melting !== null) {
     return res.status(422).json({ validation: 'melting.number' });
   }
 
-  if (req.body.boiling && typeof req.body.boiling !== 'number') {
+  if (!('boiling' in req.body)) {
+    return res.status(422).json({ validation: 'boiling.required' });
+  }
+
+  if (typeof req.body.boiling !== 'number' && req.body.boiling !== null) {
     return res.status(422).json({ validation: 'boiling.number' });
   }
 
@@ -230,6 +246,30 @@ app.put('/api/elements/:number', authMiddleware, async (req, res) => {
 
   if (!elements.rowCount) {
     return res.sendStatus(404);
+  }
+
+  if ('name' in req.body && typeof req.body.name === 'string') {
+    elements.rows[0].name = req.body.name;
+  }
+
+  if ('symbol' in req.body && typeof req.body.symbol === 'string') {
+    elements.rows[0].symbol = req.body.symbol;
+  }
+
+  if ('mass' in req.body && typeof req.body.mass === 'number' && 0 <= req.body.mass) {
+    elements.rows[0].mass = req.body.mass;
+  }
+
+  if ('synthetic' in req.body && typeof req.body.synthetic !== 'boolean') {
+    elements.rows[0].synthetic = req.body.synthetic;
+  }
+
+  if ('melting' in req.body && (typeof req.body.melting === 'number' || req.body.melting === null)) {
+    elements.rows[0].melting = req.body.melting;
+  }
+
+  if ('boiling' in req.body && (typeof req.body.boiling === 'number' || req.body.boiling === null)) {
+    elements.rows[0].boiling = req.body.boiling;
   }
 
   return res.status(200).json((await pgPool.query(
