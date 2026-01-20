@@ -1,4 +1,5 @@
 CREATE TABLE "users" (
-    "username" text PRIMARY KEY,
+    "id"       bigserial PRIMARY KEY,
+    "username" text NOT NULL,
     "password" text NOT NULL
 );
