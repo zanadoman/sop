@@ -25,7 +25,9 @@ app.use(expressSession({
 }));
 app.use('/api/docs', swaggerUiExpress.serve, swaggerUiExpress.setup(swaggerJSDoc({
   apis: ['api/**/*.js'],
-  definition: {}
+  definition: {
+    openapi: '3.0.0'
+  }
 })));
 
 const authMiddleware = (req, res, next) => {
@@ -35,6 +37,28 @@ const authMiddleware = (req, res, next) => {
   return next();
 };
 
+/**
+  * @openapi
+  * /api/register:
+  *   post:
+  *     summary: Register a user
+  *     requestBody:
+  *       required: true
+  *       content:
+  *         application/json:
+  *           schema:
+  *             type: object
+  *             properties:
+  *               username:
+  *                 type: string
+  *               password:
+  *                 type: string
+  *     responses:
+  *       201:
+  *         description: User registered
+  *       422:
+  *         description: Validation error
+  */
 app.post('/api/register', async (req, res) => {
   if (!req.body.username) {
     return res.status(422).json({ validation: 'username.required' });
