@@ -1,18 +1,17 @@
 'use strict';
 
 import express from 'express';
-import { Pool } from 'pg';
-import '@dotenvx/dotenvx/config';
 import connectPgSimple from 'connect-pg-simple';
 import expressSession from 'express-session';
+import { Pool } from 'pg';
+import '@dotenvx/dotenvx/config';
 import bcrypt from 'bcrypt';
 import path from 'path';
 
 const app = express();
 app.use(express.json());
-const pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
-
 const pgSession = connectPgSimple(expressSession);
+const pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
 app.use(expressSession({
   secret: 'secret',
   store: new pgSession({
@@ -27,12 +26,12 @@ function authMiddleware(req, res, next) {
   if (!req.session.user) {
     return res.sendStatus(401);
   }
-  next();
+  return next();
 }
 
 app.post('/api/register', async (req, res) => {
   if (!req.body.username) {
-    return res.status(422).json({ validation: 'Username required!' });
+    return res.status(422).json({ validation: 'username.required' });
   }
 
   if ((await pgPool.query(
@@ -42,18 +41,18 @@ app.post('/api/register', async (req, res) => {
      LIMIT 1`,
     [req.body.username]
   )).rowCount) {
-    return res.status(422).json({ validation: 'Username already in use!' });
+    return res.status(422).json({ validation: 'username.duplicate' });
   }
 
   if (!req.body.password) {
-    return res.status(422).json({ validation: 'Password required!' });
+    return res.status(422).json({ validation: 'password.required' });
   }
 
   if (req.body.password.length < 8) {
-    return res.status(422).json({ validation: 'Password too short!' });
+    return res.status(422).json({ validation: 'password.short' });
   }
 
-  res.status(201).json((await pgPool.query(
+  return res.status(201).json((await pgPool.query(
     `INSERT INTO "users" ("username", "password")
      VALUES ($1, $2)
      RETURNING "username"`,
@@ -70,15 +69,24 @@ app.post('/api/login', async (req, res) => {
     [req.body.username]
   );
 
-  if (!users.rowCount || !await bcrypt.compare(req.body.password, users.rows[0].password)) {
-    return res.sendStatus(401);
-  }
+  const invalid = !users.rowCount || !await bcrypt.compare(req.body.password, users.rows[0].password);
 
-  req.session.user = {
-    id: users.rows[0].id,
-    username: users.rows[0].username
-  };
-  return res.status(200).json(req.session.user);
+  req.session.regenerate(err => {
+    if (err) {
+      console.error(err);
+      return req.sendStatus(500);
+    }
+
+    if (invalid) {
+      return res.sendStatus(401);
+    }
+
+    req.session.user = {
+      id: users.rows[0].id,
+      username: users.rows[0].username
+    };
+    return res.status(200).json(req.session.user);
+  });
 });
 
 app.post('/api/logout', authMiddleware, (req, res) => {
@@ -87,8 +95,7 @@ app.post('/api/logout', authMiddleware, (req, res) => {
       return res.status(500);
     }
 
-    res.clearCookie();
-    res.sendStatus(204);
+    return res.sendStatus(204);
   });
 });
 
