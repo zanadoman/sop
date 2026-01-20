@@ -64,6 +64,10 @@ app.post('/api/register', async (req, res) => {
     return res.status(422).json({ validation: 'username.required' });
   }
 
+  if (typeof req.body.username !== 'string') {
+    return res.status(422).json({ validation: 'username.string' });
+  }
+
   if ((await pgPool.query(
     `SELECT *
      FROM "users"
@@ -78,6 +82,10 @@ app.post('/api/register', async (req, res) => {
     return res.status(422).json({ validation: 'password.required' });
   }
 
+  if (typeof req.body.password !== 'string') {
+    return res.status(422).json({ validation: 'password.string' });
+  }
+
   if (req.body.password.length < 8) {
     return res.status(422).json({ validation: 'password.short' });
   }
@@ -87,7 +95,7 @@ app.post('/api/register', async (req, res) => {
      VALUES ($1, $2)
      RETURNING "username"`,
     [req.body.username, await bcrypt.hash(req.body.password, 10)]
-  )).rows);
+  )).rows[0]);
 });
 
 app.post('/api/login', async (req, res) => {
@@ -129,6 +137,136 @@ app.post('/api/logout', authMiddleware, (req, res) => {
   });
 });
 
+app.get('/api/elements', async (_, res) => {
+  return res.status(200).json((await pgPool.query(
+    `SELECT *
+     FROM "elements"`
+  )).rows);
+});
+
+app.post('/api/elements/', authMiddleware, async (req, res) => {
+  if (!req.body.number) {
+    return res.status(422).json({ validation: 'number.required' });
+  }
+
+  if (typeof req.body.number !== 'number') {
+    return res.status(422).json({ validation: 'number.number' });
+  }
+
+  if (req.body.number < 1) {
+    return res.status(422).json({ validation: 'number.low' });
+  }
+
+  if ((await pgPool.query(
+    `SELECT *
+     FROM "elements"
+     WHERE "number" = $1
+     LIMIT 1`,
+    [req.body.number]
+  )).rowCount) {
+    return res.status(422).json({ validation: 'number.duplicate' });
+  }
+
+  if (!req.body.name) {
+    return res.status(422).json({ validation: 'name.required' });
+  }
+
+  if (!req.body.symbol) {
+    return res.status(422).json({ validation: 'symbol.required' });
+  }
+
+  if (!req.body.mass) {
+    return res.status(422).json({ validation: 'mass.required' });
+  }
+
+  if (typeof req.body.mass !== 'number') {
+    return res.status(422).json({ validation: 'mass.number' });
+  }
+
+  if (req.body.mass < 0) {
+    return res.status(422).json({ validation: 'mass.low' });
+  }
+
+  if (!req.body.synthetic) {
+    return res.status(422).json({ validation: 'synthetic.required' });
+  }
+
+  if (typeof req.body.synthetic !== 'boolean') {
+    return res.status(422).json({ validation: 'synthetic.boolean' });
+  }
+
+  if (req.body.melting && typeof req.body.melting !== 'number') {
+    return res.status(422).json({ validation: 'melting.number' });
+  }
+
+  if (req.body.boiling && typeof req.body.boiling !== 'number') {
+    return res.status(422).json({ validation: 'boiling.number' });
+  }
+
+  return res.status(201).json((await pgPool.query(
+    `INSERT INTO "users"
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING *`,
+    [
+      req.body.number,
+      req.body.name,
+      req.body.symbol,
+      req.body.mass,
+      req.body.synthetic,
+      req.body.melting,
+      req.body.boiling
+    ]
+  )).rows[0]);
+});
+
+app.put('/api/elements/:number', authMiddleware, async (req, res) => {
+  const elements = await pgPool.query(
+    `SELECT *
+     FROM "elements"
+     WHERE "number" = $1
+     LIMIT 1`,
+    [req.params.number]
+  );
+
+  if (!elements.rowCount) {
+    return res.sendStatus(404);
+  }
+
+  return res.status(200).json((await pgPool.query(
+    `UPDATE "users"
+     SET
+       "name" = $1,
+       "symbol" = $2.
+       "mass" = $3,
+       "synthetic" = $4,
+       "melting" = $5,
+       "boiling" = $6
+     WHERE "number" = $7
+     RETURNING *`,
+    [
+      elements.rows[0].name,
+      elements.rows[0].symbol,
+      elements.rows[0].mass,
+      elements.rows[0].synthetic,
+      elements.rows[0].melting,
+      elements.rows[0].boiling,
+      elements.rows[0].number
+    ]
+  )).rows[0]);
+});
+
+app.delete('/api/elements/:number', authMiddleware, async (req, res) => {
+  if ((await pgPool.query(
+    `DELETE FROM "elements"
+     WHERE "number" = $1`,
+    [req.params.number]
+  )).rows) {
+    return res.sendStatus(204);
+  }
+
+  return res.sendStatus(404);
+});
+
 app.get('/api/queries/elements', async (_, res) => {
   return res.status(200).json((await pgPool.query(
     `SELECT "symbol", "number"
@@ -147,7 +285,7 @@ app.get('/api/queries/liquid', async (req, res) => {
 });
 
 app.get('/api/queries/record', async (_, res) => {
-  const record = await pgPool.query(
+  const records = await pgPool.query(
     `SELECT "name", "symbol"
      FROM "elements"
      WHERE "boiling" - "melting" = (
@@ -156,11 +294,12 @@ app.get('/api/queries/record', async (_, res) => {
      )
      LIMIT 1`
   );
-  if (record.rowCount) {
-    return res.status(200).json(record.rows[0]);
-  } else {
-    return res.sendStatus(404);
+
+  if (records.rowCount) {
+    return res.status(200).json(records.rows[0]);
   }
+
+  return res.sendStatus(404);
 });
 
 const root = path.resolve('dist/sop/browser');
