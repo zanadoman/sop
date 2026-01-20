@@ -129,7 +129,41 @@ app.post('/api/logout', authMiddleware, (req, res) => {
   });
 });
 
+app.get('/api/queries/elements', async (_, res) => {
+  return res.status(200).json((await pgPool.query(
+    `SELECT "symbol", "number"
+     FROM "elements"
+     ORDER BY "symbol"`
+  )).rows);
+});
+
+app.get('/api/queries/liquid', async (req, res) => {
+  return res.status(200).json((await pgPool.query(
+    `SELECT "name", "melting", "boiling"
+     FROM "elements"
+     WHERE "melting" <= $1 AND $1 <= "boiling"`,
+    [req.query.celsius ?? 500]
+  )).rows);
+});
+
+app.get('/api/queries/record', async (_, res) => {
+  const record = await pgPool.query(
+    `SELECT "name", "symbol"
+     FROM "elements"
+     WHERE "boiling" - "melting" = (
+       SELECT max("boiling" - "melting")
+       FROM "elements"
+     )
+     LIMIT 1`
+  );
+  if (record.rowCount) {
+    return res.status(200).json(record.rows[0]);
+  } else {
+    return res.sendStatus(404);
+  }
+});
+
 const root = path.resolve('dist/sop/browser');
 app.use(express.static(root));
 app.use((_, res) => res.sendFile(`${root}/index.html`));
-app.listen(process.env.APP_PORT || 8080);
+app.listen(process.env.APP_PORT ?? 8080);
