@@ -5,6 +5,8 @@ import connectPgSimple from 'connect-pg-simple';
 import expressSession from 'express-session';
 import { Pool } from 'pg';
 import '@dotenvx/dotenvx/config';
+import swaggerUiExpress from 'swagger-ui-express';
+import swaggerJSDoc from 'swagger-jsdoc';
 import bcrypt from 'bcrypt';
 import path from 'path';
 
@@ -21,13 +23,17 @@ app.use(expressSession({
   resave: false,
   saveUninitialized: false
 }));
+app.use('/api/docs', swaggerUiExpress.serve, swaggerUiExpress.setup(swaggerJSDoc({
+  apis: ['api/**/*.js'],
+  definition: {}
+})));
 
-function authMiddleware(req, res, next) {
+const authMiddleware = (req, res, next) => {
   if (!req.session.user) {
     return res.sendStatus(401);
   }
   return next();
-}
+};
 
 app.post('/api/register', async (req, res) => {
   if (!req.body.username) {
